@@ -16,9 +16,10 @@ model toward whatever it did on the good attempts — no human labelers, no rewa
 
 ## Roadmap
 
-- [ ] **Stage 1 — The engine.** A `REINFORCE` policy-gradient agent, from scratch, that learns to
+- [x] **Stage 1 — The engine.** A `REINFORCE` policy-gradient agent, from scratch, that learns to
   balance CartPole. Establishes the four primitives everything else is built on: *policy, action,
-  reward, gradient*.
+  reward, gradient*. (It also vividly demonstrates *policy collapse* — the instability that motivates
+  Stage 2.)
 - [ ] **Stage 2 — The bridge.** GRPO explained as "REINFORCE with a group baseline." The conceptual
   step from balancing a pole to training a language model — same gradient, smarter baseline.
 - [ ] **Stage 3 — The capstone.** GRPO on a small language model (via HuggingFace TRL) for a task with

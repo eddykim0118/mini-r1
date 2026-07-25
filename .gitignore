@@ -1,0 +1,36 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ---- uv / virtual environment ----
+# The installed libraries. Huge, and rebuildable from pyproject.toml + uv.lock.
+.venv/
+
+# ---- Secrets (NEVER commit these) ----
+.env
+.env.*
+*.token
+secrets/
+
+# ---- ML artifacts (big binary files; share via Hugging Face, not git) ----
+# Trained model weights, checkpoints, logs. We'll push the good ones to HF later.
+*.pt
+*.pth
+*.safetensors
+checkpoints/
+runs/
+wandb/
+
+# ---- Plots / generated output ----
+# (We'll selectively force-add specific result images later with `git add -f`.)
+*.png
+*.gif
+*.mp4
+
+# ---- OS / editor cruft ----
+.DS_Store
+.vscode/
+.idea/

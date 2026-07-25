@@ -30,6 +30,9 @@ wandb/
 *.gif
 *.mp4
 
+# ---- Personal study notes (local only, not published) ----
+docs/
+
 # ---- OS / editor cruft ----
 .DS_Store
 .vscode/

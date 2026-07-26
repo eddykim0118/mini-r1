@@ -20,8 +20,9 @@ model toward whatever it did on the good attempts — no human labelers, no rewa
   balance CartPole. Establishes the four primitives everything else is built on: *policy, action,
   reward, gradient*. (It also vividly demonstrates *policy collapse* — the instability that motivates
   Stage 2.)
-- [ ] **Stage 2 — The bridge.** GRPO explained as "REINFORCE with a group baseline." The conceptual
-  step from balancing a pole to training a language model — same gradient, smarter baseline.
+- [x] **Stage 2 — The bridge.** GRPO explained as "REINFORCE with a group baseline." The conceptual
+  step from balancing a pole to training a language model — same gradient, smarter baseline. The
+  group-relative advantage + a gradient-clipping leash turn Stage 1's boom-bust into a stable plateau.
 - [ ] **Stage 3 — The capstone.** GRPO on a small language model (via HuggingFace TRL) for a task with
   a *verifiable* reward: the **Countdown** number game. Watch accuracy climb — and watch the model
   start writing out its reasoning on its own, because reasoning earns reward.

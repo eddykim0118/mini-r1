@@ -17,14 +17,23 @@ import operator
 import random
 import re
 
-FORMAT_BONUS = 0.1
-CORRECT_REWARD = 1.0
+FORMAT_BONUS = 0.1      # well-formed <think>/<answer> tags
+PARTIAL_REWARD = 0.2    # valid expression using exactly the right numbers, but wrong value
+CORRECT_REWARD = 1.0    # expression actually hits the target (dominant, to avoid reward hacking)
 
 SYSTEM_PROMPT = (
     "You are solving the Countdown number game. Given a list of numbers and a target, "
     "use each number exactly once with + - * / and parentheses to reach the target.\n"
     "First reason step by step inside <think> </think>, then give ONLY the final expression "
     "inside <answer> </answer>. Example: <answer> (3 + 5) * 2 </answer>."
+)
+
+# One worked example, shown as a completed turn. Small models imitate a *shown* format far
+# better than they follow a *described* one -- this bootstraps format compliance (cold-start fix).
+_EXAMPLE_USER = "Numbers: [2, 3, 5]\nTarget: 16"
+_EXAMPLE_ASSISTANT = (
+    "<think>I need 16 from 2, 3, 5. 3 + 5 = 8, and 8 * 2 = 16.</think>\n"
+    "<answer>(3 + 5) * 2</answer>"
 )
 
 
@@ -44,9 +53,11 @@ def generate_countdown(n_numbers: int = 3, low: int = 1, high: int = 25,
 
 
 def make_prompt(numbers: list[int], target: int) -> list[dict]:
-    """Chat-format a puzzle. The trainer will apply the model's chat template to this."""
+    """Chat-format a puzzle, including one worked example so the model imitates the format."""
     user = f"Numbers: {numbers}\nTarget: {target}"
     return [{"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": _EXAMPLE_USER},
+            {"role": "assistant", "content": _EXAMPLE_ASSISTANT},
             {"role": "user", "content": user}]
 
 
@@ -101,7 +112,9 @@ def _score_one(text: str, numbers: list[int], target: int) -> float:
         value = _safe_eval(answer)
     except Exception:
         return 0.0
-    return CORRECT_REWARD if abs(value - target) < 1e-6 else 0.0
+    # Graded: right numbers in a valid expression earns partial credit even if the value is
+    # off; hitting the target earns the dominant reward. This gives GRPO a gradient to climb.
+    return CORRECT_REWARD if abs(value - target) < 1e-6 else PARTIAL_REWARD
 
 
 # ---- Reward functions (TRL passes `completions` + dataset columns as kwargs) ----
@@ -120,10 +133,10 @@ if __name__ == "__main__":
     assert format_reward([c1]) == [0.1]
     assert correctness_reward([c1], numbers=[[2, 3, 5]], target=[16]) == [1.0]
 
-    # Case 2: right format, WRONG arithmetic -> format yes, correctness no
-    c2 = "<think>guessing</think><answer>2 + 3 + 5</answer>"  # = 10, not 16
+    # Case 2: right numbers, valid expr, WRONG value -> partial credit 0.2 (the new tier)
+    c2 = "<think>guessing</think><answer>2 + 3 + 5</answer>"  # = 10, not 16, but uses 2,3,5 once
     assert format_reward([c2]) == [0.1]
-    assert correctness_reward([c2], numbers=[[2, 3, 5]], target=[16]) == [0.0]
+    assert correctness_reward([c2], numbers=[[2, 3, 5]], target=[16]) == [0.2]
 
     # Case 3: right value but WRONG numbers (reuses 4, ignores given set) -> correctness no
     c3 = "<think>...</think><answer>4 * 4</answer>"  # = 16 but not the given numbers

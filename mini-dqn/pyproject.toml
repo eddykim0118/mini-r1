@@ -1,0 +1,10 @@
+[project]
+name = "mini-dqn"
+version = "0.1.0"
+description = "Value-based RL from scratch: tabular Q-learning to Double DQN"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.11.1",
+    "numpy>=2.5.1",
+]

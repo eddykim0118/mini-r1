@@ -23,9 +23,37 @@ model toward whatever it did on the good attempts — no human labelers, no rewa
 - [x] **Stage 2 — The bridge.** GRPO explained as "REINFORCE with a group baseline." The conceptual
   step from balancing a pole to training a language model — same gradient, smarter baseline. The
   group-relative advantage + a gradient-clipping leash turn Stage 1's boom-bust into a stable plateau.
-- [ ] **Stage 3 — The capstone.** GRPO on a small language model (via HuggingFace TRL) for a task with
-  a *verifiable* reward: the **Countdown** number game. Watch accuracy climb — and watch the model
-  start writing out its reasoning on its own, because reasoning earns reward.
+- [x] **Stage 3 — The capstone.** GRPO on a small language model (via HuggingFace TRL) for a task with
+  a *verifiable* reward: the **Countdown** number game. The full RLVR loop works end-to-end on a laptop
+  — and it taught a sharp, honest lesson about reward design (see Results below).
+
+## Results (Stage 3 capstone)
+
+Trained `Qwen2.5-0.5B-Instruct` with GRPO on Countdown (RLVR) on an Apple M4 Pro — no datacenter.
+Honest, strict, greedy evaluation on held-out puzzles (N=24, so treat as approximate):
+
+| Run | format (before → after) | exactly-solved (before → after) |
+|---|---|---|
+| 3-number puzzles, 200 steps | 0% → ~92% | 8% → 4% |
+| 2-number curriculum, 300 steps | 0% → 100% | 46% → 29% |
+
+**What worked:** the full RLVR loop runs end-to-end, and GRPO reliably taught the model the
+`<think>/<answer>` output format (→ ~100% compliance). Reward provably climbs; the mechanism from
+Stages 1–2 scales to a language model.
+
+**What didn't — the interesting part:** GRPO did *not* improve, and consistently *degraded*, actual
+problem-solving. The dense, easy **format** reward dominated the sparse **correctness** reward, so the
+model optimized formatting. And forcing a 0.5B model to "show its work" makes it condition answers on
+its own unreliable reasoning — derailing even trivial puzzles (`21 + 2 = 23` → the trained model
+reasoned itself into `(21 - 1) + 1`).
+
+**The lesson:** *you get what you reward, not what you want.* The hard part of RLVR isn't running GRPO —
+it's designing a reward and curriculum where the easy path and the intended path are the same path.
+A reproducible negative result that captures the central difficulty of the field.
+
+**Future work:** gate or drop the format reward so correctness dominates; SFT warm-start on correct
+solutions before RL (as real R1 pipelines do); a larger base model; longer training with a denser
+correctness signal.
 
 ## Setup
 

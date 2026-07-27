@@ -33,11 +33,11 @@ from countdown_task import (
 MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
 
 
-def build_dataset(n: int) -> Dataset:
+def build_dataset(n: int, n_numbers: int) -> Dataset:
     """A dataset of Countdown puzzles. `numbers`/`target` ride along for the reward funcs."""
     rows = {"prompt": [], "numbers": [], "target": []}
     for _ in range(n):
-        numbers, target = generate_countdown()
+        numbers, target = generate_countdown(n_numbers=n_numbers)
         rows["prompt"].append(make_prompt(numbers, target))
         rows["numbers"].append(numbers)
         rows["target"].append(target)
@@ -67,6 +67,7 @@ def main():
     p.add_argument("--max-steps", type=int, default=50)
     p.add_argument("--n-train", type=int, default=128)
     p.add_argument("--eval-size", type=int, default=20)
+    p.add_argument("--n-numbers", type=int, default=3)         # puzzle difficulty (2 = curriculum)
     p.add_argument("--num-generations", type=int, default=4)   # the "group" G
     p.add_argument("--batch-size", type=int, default=4)        # must be divisible by G
     p.add_argument("--max-completion", type=int, default=160)
@@ -81,7 +82,7 @@ def main():
     model = AutoModelForCausalLM.from_pretrained(MODEL).to(device)
 
     # Fixed eval puzzles so the before/after comparison is apples-to-apples.
-    eval_puzzles = [generate_countdown() for _ in range(args.eval_size)]
+    eval_puzzles = [generate_countdown(n_numbers=args.n_numbers) for _ in range(args.eval_size)]
 
     print("\nEvaluating BEFORE training...")
     acc0, fmt0 = evaluate(model, tokenizer, eval_puzzles, device)
@@ -104,7 +105,7 @@ def main():
         model=model,
         reward_funcs=[format_reward, correctness_reward],
         args=config,
-        train_dataset=build_dataset(args.n_train),
+        train_dataset=build_dataset(args.n_train, args.n_numbers),
         processing_class=tokenizer,
     )
 

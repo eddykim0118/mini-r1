@@ -25,8 +25,9 @@ truly-best arm. The goal: make regret grow *logarithmically* (mostly-early mista
 - [x] **Stage 2 — UCB1.** "Optimism under uncertainty" — explore the arm whose *upper confidence bound*
   is highest. Exploration driven by how unsure we are, not by a coin flip. Over a long horizon its
   regret is *sublinear* (the curve flattens) and crosses below ε-greedy's *linear* line.
-- [ ] **Stage 3 — Thompson Sampling.** The Bayesian approach: keep a belief distribution per arm,
-  sample from it, play the winner. Elegant, and what actually ships in industry.
+- [x] **Stage 3 — Thompson Sampling.** The Bayesian approach: keep a Beta belief per arm, sample from
+  it, play the winner. Elegant, tuning-free, and what actually ships in industry — beat ε-greedy and
+  UCB1 by ~7–9× regret here, with zero knobs.
 - [ ] **Stage 4 — LinUCB (contextual).** Decisions that depend on *features* (a user, a situation) —
   the leap from toy to practical.
 

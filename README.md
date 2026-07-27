@@ -22,8 +22,9 @@ truly-best arm. The goal: make regret grow *logarithmically* (mostly-early mista
 - [x] **Stage 1 — ε-greedy.** The raw explore/exploit knob: exploit the best arm, but with probability
   ε pick a random arm. Sweeping ε shows the tradeoff (ε=0 gets stuck, ε=0.5 wastes pulls, ε=0.1 is the
   sweet spot) — and that fixed-ε exploration means *linear* regret forever, motivating UCB.
-- [ ] **Stage 2 — UCB1.** "Optimism under uncertainty" — explore the arm whose *upper confidence bound*
-  is highest. Exploration driven by how unsure we are, not by a coin flip.
+- [x] **Stage 2 — UCB1.** "Optimism under uncertainty" — explore the arm whose *upper confidence bound*
+  is highest. Exploration driven by how unsure we are, not by a coin flip. Over a long horizon its
+  regret is *sublinear* (the curve flattens) and crosses below ε-greedy's *linear* line.
 - [ ] **Stage 3 — Thompson Sampling.** The Bayesian approach: keep a belief distribution per arm,
   sample from it, play the winner. Elegant, and what actually ships in industry.
 - [ ] **Stage 4 — LinUCB (contextual).** Decisions that depend on *features* (a user, a situation) —

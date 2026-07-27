@@ -1,0 +1,25 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ---- uv / virtual environment ----
+.venv/
+
+# ---- Secrets (never commit) ----
+.env
+.env.*
+
+# ---- Personal study notes (local only, not published) ----
+docs/
+
+# ---- Generated plots (force-add specific result images with `git add -f`) ----
+*.png
+*.gif
+
+# ---- OS / editor cruft ----
+.DS_Store
+.vscode/
+.idea/

@@ -28,8 +28,24 @@ truly-best arm. The goal: make regret grow *logarithmically* (mostly-early mista
 - [x] **Stage 3 — Thompson Sampling.** The Bayesian approach: keep a Beta belief per arm, sample from
   it, play the winner. Elegant, tuning-free, and what actually ships in industry — beat ε-greedy and
   UCB1 by ~7–9× regret here, with zero knobs.
-- [ ] **Stage 4 — LinUCB (contextual).** Decisions that depend on *features* (a user, a situation) —
-  the leap from toy to practical.
+- [x] **Stage 4 — LinUCB (contextual).** Decisions that depend on *features* (a user, a situation) —
+  the leap from toy to practical. Learns a per-arm weight vector via ridge regression and beat a
+  context-blind baseline by >100× regret. The model behind real recommenders/ad-selectors.
+
+## Results at a glance
+
+Cumulative regret (lower = better), same 10-armed Bernoulli problem where comparable:
+
+| Algorithm | Regret | Shape | One-line takeaway |
+|---|---|---|---|
+| ε-greedy (ε=0) | ~298 | linear | pure greedy gets stuck |
+| ε-greedy (ε=0.1) | ~65–110 | linear | fixed exploration → linear regret forever |
+| UCB1 | sublinear | flattens | explore by *uncertainty* → beats ε-greedy at scale |
+| Thompson Sampling | ~50 | flattest | Bayesian, tuning-free, ~7–9× better; ships in industry |
+| LinUCB (contextual) | ~33 vs ~3700 blind | flat | using *context* beats context-blind by >100× |
+
+Each stage's plot lives in its folder. The arc: a fixed-rate coin flip → optimism under uncertainty →
+Bayesian belief-sampling → context-aware decisions.
 
 ## Setup
 

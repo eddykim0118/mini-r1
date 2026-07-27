@@ -1,79 +1,85 @@
-# mini-r1
+# rl-lab
 
-A from-scratch journey from **CartPole** to an **R1-style reasoning LLM**, using reinforcement learning.
+Reinforcement learning, built from the ground up. Three algorithm families, implemented from scratch,
+each one benchmarked and written up honestly — including where it failed.
 
-The goal: understand — by building — how models like DeepSeek-R1 are trained to *reason*, using
-**RL with Verifiable Rewards (RLVR)** and the **GRPO** algorithm. We start with the simplest possible
-RL agent and climb, one comprehensible step at a time, to teaching a small language model to solve
-problems it was never explicitly shown how to solve.
+> Built on a laptop (Apple M4 Pro). No datacenter required.
 
-> Built as a learning project on a laptop (Apple M4 Pro). No data-center required.
+## Why three projects
 
-## The core idea, in one sentence
+Most RL material teaches one algorithm and stops. But "RL" is really three different questions, and you
+don't understand the field until you've built all three:
 
-Let a model try a problem many times, automatically check which attempts were correct, and nudge the
-model toward whatever it did on the good attempts — no human labelers, no reward model, just a checker.
+| Question | Family | Project |
+|---|---|---|
+| How do I make good actions more likely? | **Policy optimization** | [`mini-r1/`](mini-r1/) |
+| When do I try something new vs. take the sure thing? | **Exploration / exploitation** | [`mini-bandits/`](mini-bandits/) |
+| How good is this situation, and how do I know? | **Value-based methods** | [`mini-dqn/`](mini-dqn/) |
 
-## Roadmap
+- [x] **`mini-r1`** — REINFORCE → GRPO → RLVR on a real language model. Policy gradients, from CartPole
+  to teaching `Qwen2.5-0.5B` to play the Countdown number game.
+- [x] **`mini-bandits`** — ε-greedy → UCB1 → Thompson Sampling → LinUCB. The explore/exploit tradeoff,
+  graded by *regret*, ending at the contextual bandit that powers real recommenders.
+- [ ] **`mini-dqn`** — tabular Q-learning → DQN → replay buffer + target network → Double DQN. The
+  value-based branch, and where bootstrapping earns both its power and its instability.
 
-- [x] **Stage 1 — The engine.** A `REINFORCE` policy-gradient agent, from scratch, that learns to
-  balance CartPole. Establishes the four primitives everything else is built on: *policy, action,
-  reward, gradient*. (It also vividly demonstrates *policy collapse* — the instability that motivates
-  Stage 2.)
-- [x] **Stage 2 — The bridge.** GRPO explained as "REINFORCE with a group baseline." The conceptual
-  step from balancing a pole to training a language model — same gradient, smarter baseline. The
-  group-relative advantage + a gradient-clipping leash turn Stage 1's boom-bust into a stable plateau.
-- [x] **Stage 3 — The capstone.** GRPO on a small language model (via HuggingFace TRL) for a task with
-  a *verifiable* reward: the **Countdown** number game. The full RLVR loop works end-to-end on a laptop
-  — and it taught a sharp, honest lesson about reward design (see Results below).
+## Results
 
-## Results (Stage 3 capstone)
+**`mini-bandits`** — cumulative regret (lower is better), 10-armed Bernoulli:
 
-Trained `Qwen2.5-0.5B-Instruct` with GRPO on Countdown (RLVR) on an Apple M4 Pro — no datacenter.
-Honest, strict, greedy evaluation on held-out puzzles (N=24, so treat as approximate):
+| Algorithm | Regret | Shape | Takeaway |
+|---|---|---|---|
+| ε-greedy (ε=0.1) | ~439 | linear | fixed exploration → linear regret forever |
+| UCB1 (c=√2) | ~374 | flattens | explore by *uncertainty*, not at random |
+| Thompson Sampling | ~50 | flattest | Bayesian, tuning-free, 7–9× better; what ships in industry |
+| LinUCB (contextual) | ~33 vs ~3733 context-blind | flat | using context beats ignoring it by >100× |
 
-| Run | format (before → after) | exactly-solved (before → after) |
+**`mini-r1`** — GRPO on `Qwen2.5-0.5B-Instruct`, Countdown, strict greedy eval on held-out puzzles
+(N=24, so approximate):
+
+| Run | format compliance | exactly solved |
 |---|---|---|
 | 3-number puzzles, 200 steps | 0% → ~92% | 8% → 4% |
 | 2-number curriculum, 300 steps | 0% → 100% | 46% → 29% |
 
-**What worked:** the full RLVR loop runs end-to-end, and GRPO reliably taught the model the
-`<think>/<answer>` output format (→ ~100% compliance). Reward provably climbs; the mechanism from
-Stages 1–2 scales to a language model.
+## What these actually taught me
 
-**What didn't — the interesting part:** GRPO did *not* improve, and consistently *degraded*, actual
-problem-solving. The dense, easy **format** reward dominated the sparse **correctness** reward, so the
-model optimized formatting. And forcing a 0.5B model to "show its work" makes it condition answers on
-its own unreliable reasoning — derailing even trivial puzzles (`21 + 2 = 23` → the trained model
-reasoned itself into `(21 - 1) + 1`).
+**You get what you reward, not what you want.** (`mini-r1`) The full RLVR loop works end to end, and
+GRPO reliably taught the *output format* — up to 100% compliance. It also consistently **degraded**
+actual problem-solving. The dense, easy format reward drowned out the sparse correctness reward, so the
+model optimized the thing that was easy to score. A reproducible negative result that captures the
+central difficulty of the field: the hard part isn't running the algorithm, it's designing a reward
+where the easy path and the intended path are the same path.
 
-**The lesson:** *you get what you reward, not what you want.* The hard part of RLVR isn't running GRPO —
-it's designing a reward and curriculum where the easy path and the intended path are the same path.
-A reproducible negative result that captures the central difficulty of the field.
+**The best algorithm is a property of the problem, not the algorithm.** (`mini-bandits`) Thompson
+Sampling dominates everything by 7–9× — on a *stationary* problem. Change the world underneath it and
+that lead evaporates. Likewise LinUCB's >100× win came not from smarter exploration but from modeling
+reward correctly; a perfect explore/exploit strategy still loses if it's asking the wrong question.
 
-**Future work:** gate or drop the format reward so correctness dominates; SFT warm-start on correct
-solutions before RL (as real R1 pipelines do); a larger base model; longer training with a denser
-correctness signal.
+**Optimism, uncertainty, and forgetting are the same conversation.** UCB explores by uncertainty,
+Thompson by sampling beliefs, and a constant step size decides how much of the past to trust. All three
+are answers to "how confident should I be in what I think I know?"
 
-## Setup
+## Layout
 
-This project uses [`uv`](https://docs.astral.sh/uv/) for Python and dependency management.
+Each project is self-contained — its own `pyproject.toml`, its own dependencies, run from its own
+directory. `mini-bandits` is pure numpy; `mini-r1` needs torch and transformers. Nothing shared, nothing
+to untangle.
 
 ```bash
-# Install dependencies into an isolated environment (.venv)
-uv sync
-
-# Run something inside that environment
-uv run python stage1_fundamentals/reinforce_cartpole.py
+cd mini-bandits && uv sync && uv run python stage1_epsilon_greedy/epsilon_greedy.py
+cd mini-r1     && uv sync && uv run python stage1_fundamentals/reinforce_cartpole.py
 ```
 
-Python 3.12 is pinned (`.python-version`) because PyTorch does not yet ship builds for newer versions.
+Python 3.12 is pinned (PyTorch doesn't yet ship builds for newer versions). Each project's own README is
+the deep dive; this one is the map.
 
 ## Why these choices
 
-- **CartPole first** — RL's "hello world." Runs in seconds on a CPU, so we learn the algorithm without
-  waiting on training.
-- **GRPO** — the algorithm behind DeepSeek-R1. Simpler than PPO (no separate value network), which
-  makes it a friendlier first "real" RL algorithm.
-- **Countdown** — correctness is trivially checkable by code, which is exactly what "verifiable reward"
-  means. It's also the task the well-known *TinyZero* R1 reproduction used.
+- **CartPole first, everywhere** — RL's "hello world," and it runs in seconds on a CPU, so the algorithm
+  is the thing you wait on, not the hardware. It also lets `mini-dqn` be compared head-to-head against
+  `mini-r1`'s policy-gradient agent on identical ground.
+- **Regret as the bandit metric** — it measures *decision quality* against the true best arm, not luck.
+- **From scratch, then a library** — every algorithm is hand-written first (numpy or bare torch). The
+  one exception is `mini-r1`'s capstone, which uses HuggingFace TRL, because by then the point was
+  whether the loop scales to a real model, not whether I could reimplement it.

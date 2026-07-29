@@ -20,7 +20,7 @@ don't understand the field until you've built all three:
   to teaching `Qwen2.5-0.5B` to play the Countdown number game.
 - [x] **`mini-bandits`** — ε-greedy → UCB1 → Thompson Sampling → LinUCB. The explore/exploit tradeoff,
   graded by *regret*, ending at the contextual bandit that powers real recommenders.
-- [ ] **`mini-dqn`** — tabular Q-learning → DQN → replay buffer + target network → Double DQN. The
+- [x] **`mini-dqn`** — tabular Q-learning → DQN → replay buffer + target network → Double DQN. The
   value-based branch, and where bootstrapping earns both its power and its instability.
 
 ## Results
@@ -42,6 +42,16 @@ don't understand the field until you've built all three:
 | 3-number puzzles, 200 steps | 0% → ~92% | 8% → 4% |
 | 2-number curriculum, 300 steps | 0% → 100% | 46% → 29% |
 
+**`mini-dqn`** — CartPole (475 = solved), 400 episodes, identical seeds:
+
+| Config | Best 25-ep avg | Final 25-ep avg |
+|---|---|---|
+| Naive DQN (no fixes) | 49.8 | 38.9 |
+| + target network only | 32.8 | 9.3 |
+| + replay buffer only | **500.0** | 13.7 (collapsed) |
+| + both (real DQN) | **500.0** | 302.1 |
+| + Double DQN | **500.0** | **500.0** |
+
 ## What these actually taught me
 
 **You get what you reward, not what you want.** (`mini-r1`) The full RLVR loop works end to end, and
@@ -55,6 +65,13 @@ where the easy path and the intended path are the same path.
 Sampling dominates everything by 7–9× — on a *stationary* problem. Change the world underneath it and
 that lead evaporates. Likewise LinUCB's >100× win came not from smarter exploration but from modeling
 reward correctly; a perfect explore/exploit strategy still loses if it's asking the wrong question.
+
+**A fix that helps and a fix that heals are different things.** (`mini-dqn`) Ablating DQN's two famous
+tricks separately shows they're not interchangeable: the replay buffer does all the learning (both
+replay configs solved CartPole; neither config without one cleared 50), while a target network *alone*
+is worse than no fix at all. And the target network doesn't prevent catastrophic forgetting — both
+replay agents collapsed — it makes the collapse *survivable*. Adopting the pair as a package would have
+taught none of this.
 
 **Optimism, uncertainty, and forgetting are the same conversation.** UCB explores by uncertainty,
 Thompson by sampling beliefs, and a constant step size decides how much of the past to trust. All three
